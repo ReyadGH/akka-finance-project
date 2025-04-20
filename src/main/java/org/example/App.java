@@ -13,6 +13,7 @@ import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.example.actor.AuditActor;
+import org.example.actor.QuoteConsumerActor;
 import org.example.actor.QuoteGeneratorActor;
 import org.example.actor.TraderActor;
 import org.example.dao.FakeDB;
@@ -40,16 +41,16 @@ public class App {
 
         ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor = ActorSystem.create(QuoteGeneratorActor.behavior(producer), "quoteGenerator");
 
-        List<Stock> stocks = generateStonks(1);
+        List<Stock> stocks = generateStonks(2);
 
         for (Stock stock : stocks) {
             quoteGeneratorActor.tell(new ProduceQuote(new Quote( stock)));
         }
 
-        int numberOfTraders = 3;
+        int numberOfTraders =10;
 
         for (int i = 0; i < numberOfTraders; i++) {
-            FakeDB.traderTable.put(1, 50.0);
+            FakeDB.traderTable.put(1, 1000.0);
         }
 
         // keep auditActor as single thread to stop racing condition (this is temp fix)
@@ -59,34 +60,19 @@ public class App {
         PoolRouter<TraderActor.Command> traderPool = Routers.pool(3, TraderActor.behavior(auditActor, quoteGeneratorActor));
         ActorSystem traders = ActorSystem.create(traderPool.withBroadcastPredicate(msg -> msg instanceof TraderActor.Command), "traders");
 
-        // here should be the code for TraderActors to consume kafka topic stock-quotes
-        Properties consumerConfig = new Properties();
-        consumerConfig.put("bootstrap.servers", "localhost:9092,localhost:9092");
-        consumerConfig.put("group.id", "quotesConsumer");
-        consumerConfig.put("auto.offset.reset", "earliest");
-        consumerConfig.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-        consumerConfig.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class.getName());
-
-        KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig);
-
-        consumer.subscribe(Collections.singletonList("stock-quotes"));
 
         try {
             Thread.sleep(3000);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
-        while (true) {
-            System.out.println("Pooling");
-            ConsumerRecords<String,String> records= consumer.poll(Duration.ofMillis(4000));
 
-            for (ConsumerRecord<String,String> record: records){
+        // here should be the code for TraderActors to consume kafka topic stock-quotes
+        ActorRef<QuoteConsumerActor.Command> kafkaActor =
+                ActorSystem.create(QuoteConsumerActor.create(traders), "kafka-consumer");
+        kafkaActor.tell(new QuoteConsumerActor.StartConsuming());
 
-                Quote receivedQuote = Quote.deserializeQuote(record.value());
-//                System.out.println("Consumed Kafka quote: "+ receivedQuote);
-                traders.tell(new MarketUpdate(receivedQuote));
-            }
-        }
+//        kafkaActor.tell(new QuoteConsumerActor.StopConsuming());
 
     }
 

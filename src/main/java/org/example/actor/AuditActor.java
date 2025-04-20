@@ -52,7 +52,7 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
             description = "Buy order is accepted!";
             accepted = true;
         } else {
-
+            System.out.println("Trader: "+msg.getTraderId()+" isSad" );
             description = "Buy order is rejected! Insufficient balance";
             accepted = false;
         }

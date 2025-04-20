@@ -59,6 +59,8 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
         if (msg.getQuote().getStock().getTraderId() != this.traderId) {
             TradeRequest tradeRequest = new TradeRequest(this.traderId, OrderType.BUY,msg.getQuote().getStock());
             return onTradeRequest(tradeRequest);
+        }else{
+//            System.out.println("i want to buy");
         }
         return this;
     }
