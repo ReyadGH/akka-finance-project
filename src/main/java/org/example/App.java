@@ -50,22 +50,17 @@ public class App {
         int numberOfTraders =10;
 
         for (int i = 0; i < numberOfTraders; i++) {
-            FakeDB.traderTable.put(1, 1000.0);
+            FakeDB.traderTable.put(i, 1000.0);
         }
 
         // keep auditActor as single thread to stop racing condition (this is temp fix)
         ActorRef<AuditActor.Command> auditActor = ActorSystem.create(AuditActor.behavior(), "tradingAudit");
 
         // multi-thread the traders to simulate interaction from multiple users
-        PoolRouter<TraderActor.Command> traderPool = Routers.pool(3, TraderActor.behavior(auditActor, quoteGeneratorActor));
+        PoolRouter<TraderActor.Command> traderPool = Routers.pool(numberOfTraders, TraderActor.behavior(auditActor, quoteGeneratorActor));
         ActorSystem traders = ActorSystem.create(traderPool.withBroadcastPredicate(msg -> msg instanceof TraderActor.Command), "traders");
 
 
-        try {
-            Thread.sleep(3000);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
 
         // here should be the code for TraderActors to consume kafka topic stock-quotes
         ActorRef<QuoteConsumerActor.Command> kafkaActor =

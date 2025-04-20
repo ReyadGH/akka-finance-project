@@ -49,7 +49,7 @@ public class QuoteConsumerActor extends AbstractBehavior<QuoteConsumerActor.Comm
 
         scheduledTask = context.getSystem().scheduler().scheduleAtFixedRate(
                 Duration.ZERO,
-                Duration.ofMillis(4000),
+                Duration.ofMillis(1000),
                 () -> pollKafka(),
                 context.getSystem().executionContext());
     }
@@ -57,6 +57,7 @@ public class QuoteConsumerActor extends AbstractBehavior<QuoteConsumerActor.Comm
     private void pollKafka() {
         ConsumerRecords<String, String> records = consumer.poll(Duration.ofMillis(100));
         for (ConsumerRecord<String, String> record : records) {
+            System.out.println("new market");
             Quote receivedQuote = Quote.deserializeQuote(record.value());
             traders.tell(new MarketUpdate(receivedQuote));
         }

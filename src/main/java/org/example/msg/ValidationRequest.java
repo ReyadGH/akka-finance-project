@@ -51,4 +51,14 @@ public class ValidationRequest implements AuditActor.Command{
     public void setSender(ActorRef<TraderActor.Command> sender) {
         this.sender = sender;
     }
+
+    @Override
+    public String toString() {
+        return "ValidationRequest{" +
+                "traderId=" + traderId +
+                ", stock=" + stock +
+                ", orderType=" + orderType +
+                ", sender=" + sender +
+                '}';
+    }
 }

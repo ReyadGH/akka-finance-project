@@ -51,7 +51,7 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
         );
 
         auditActor.tell(request);
-        System.out.println("new stock :"+ msg.getStock());
+//        System.out.println("new stock :"+ msg.getStock());
         return this;
     }
 

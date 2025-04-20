@@ -41,18 +41,21 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
             description = "No Trader with this ID";
             accepted = false;
         } else if (balance >= msg.getStock().getPrice()) {
-            // update database
-            FakeDB.traderTable.replace(msg.getTraderId(), balance - msg.getStock().getPrice());
 
-            // give money to the Seller
-            if (msg.getStock().getTraderId() != -1){
-                FakeDB.traderTable.replace(msg.getStock().getTraderId(), FakeDB.traderTable.get(msg.getStock().getTraderId()) + msg.getStock().getPrice());
+            // check seller
+            int seller = msg.getStock().getTraderId();
+            boolean isSeller = FakeDB.traderTable.getOrDefault(seller, -1.0) != -1;
+
+            // update database and give money to the Seller
+            if (msg.getStock().getTraderId() != -1 && isSeller){
+                FakeDB.traderTable.replace(msg.getTraderId(), balance - msg.getStock().getPrice());
+                FakeDB.traderTable.replace(seller, FakeDB.traderTable.get(seller) + msg.getStock().getPrice());
             }
 
             description = "Buy order is accepted!";
             accepted = true;
         } else {
-            System.out.println("Trader: "+msg.getTraderId()+" isSad" );
+            System.out.println("Trader: " +msg.getTraderId()+ " isSad" );
             description = "Buy order is rejected! Insufficient balance";
             accepted = false;
         }
