@@ -16,15 +16,18 @@ import org.example.actor.AuditActor;
 import org.example.actor.QuoteGeneratorActor;
 import org.example.actor.TraderActor;
 import org.example.dao.FakeDB;
+import org.example.model.OrderType;
 import org.example.model.Quote;
 import org.example.model.Stock;
+import org.example.msg.MarketUpdate;
 import org.example.msg.ProduceQuote;
+import org.example.msg.TradeRequest;
 
 import java.time.Duration;
 import java.util.*;
 
 public class App {
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         System.out.println("System Started!!!");
 
         Properties producerConfig = new Properties();
@@ -37,21 +40,24 @@ public class App {
 
         ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor = ActorSystem.create(QuoteGeneratorActor.behavior(producer), "quoteGenerator");
 
-        List<Stock> stocks = generateStonks(100);
+        List<Stock> stocks = generateStonks(1);
 
         for (Stock stock : stocks) {
-            quoteGeneratorActor.tell(new ProduceQuote(new Quote(stock)));
+            quoteGeneratorActor.tell(new ProduceQuote(new Quote( stock)));
         }
 
+        int numberOfTraders = 3;
 
-        FakeDB.traderTable.put(1, 1000.0);
+        for (int i = 0; i < numberOfTraders; i++) {
+            FakeDB.traderTable.put(1, 50.0);
+        }
 
         // keep auditActor as single thread to stop racing condition (this is temp fix)
         ActorRef<AuditActor.Command> auditActor = ActorSystem.create(AuditActor.behavior(), "tradingAudit");
 
         // multi-thread the traders to simulate interaction from multiple users
-        PoolRouter<TraderActor.Command> traderPool = Routers.pool(3, TraderActor.behavior(auditActor));
-        ActorSystem traders = ActorSystem.create(traderPool, "traders");
+        PoolRouter<TraderActor.Command> traderPool = Routers.pool(3, TraderActor.behavior(auditActor, quoteGeneratorActor));
+        ActorSystem traders = ActorSystem.create(traderPool.withBroadcastPredicate(msg -> msg instanceof TraderActor.Command), "traders");
 
         // here should be the code for TraderActors to consume kafka topic stock-quotes
         Properties consumerConfig = new Properties();
@@ -63,15 +69,22 @@ public class App {
 
         KafkaConsumer<String, String> consumer = new KafkaConsumer<>(consumerConfig);
 
-        consumer.subscribe(Arrays.asList("stock-quotes"));
+        consumer.subscribe(Collections.singletonList("stock-quotes"));
 
-
+        try {
+            Thread.sleep(3000);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         while (true) {
             System.out.println("Pooling");
-            ConsumerRecords<String,String> records= consumer.poll(Duration.ofMillis(1000));
+            ConsumerRecords<String,String> records= consumer.poll(Duration.ofMillis(4000));
 
             for (ConsumerRecord<String,String> record: records){
-                System.out.println("Consumed: "+ record.value());
+
+                Quote receivedQuote = Quote.deserializeQuote(record.value());
+//                System.out.println("Consumed Kafka quote: "+ receivedQuote);
+                traders.tell(new MarketUpdate(receivedQuote));
             }
         }
 
@@ -98,10 +111,13 @@ public class App {
             for (int i = 0; i < numberToGen; i++) {
                 double priceFluctuation = (random.nextDouble() - 0.5) * 10;
                 double price = base + priceFluctuation;
-                stocks.add(new Stock(symbol, name, price));
+                stocks.add(new Stock(-1,symbol, name, price)); // where -1 means this stock belongs to the market
             }
         }
 
         return stocks;
     }
 }
+
+// docker exec -it kafka /bin/bash
+// kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic stock-quotes --from-beginning

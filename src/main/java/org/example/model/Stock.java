@@ -2,6 +2,7 @@ package org.example.model;
 
 public class Stock {
     private static int counter =0;
+    private int traderId;
     private int id;
     private String symbol;
     private String name;
@@ -9,11 +10,20 @@ public class Stock {
 
     public Stock() {}
 
-    public Stock(String symbol, String name, double price) {
+    public Stock(int traderId, String symbol, String name, double price) {
         this.id = counter++;
+        this.traderId = traderId;
         this.symbol = symbol;
         this.name = name;
         this.price = price;
+    }
+
+    public int getTraderId() {
+        return traderId;
+    }
+
+    public void setTraderId(int traderId) {
+        this.traderId = traderId;
     }
 
     public int getId() {
@@ -51,7 +61,8 @@ public class Stock {
     @Override
     public String toString() {
         return "Stock{" +
-                "id=" + id +
+                "traderId=" + traderId +
+                ", id=" + id +
                 ", symbol='" + symbol + '\'' +
                 ", name='" + name + '\'' +
                 ", price=" + price +

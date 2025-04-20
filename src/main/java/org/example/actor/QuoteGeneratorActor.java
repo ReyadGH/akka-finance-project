@@ -44,6 +44,8 @@ public class QuoteGeneratorActor extends AbstractBehavior<QuoteGeneratorActor.Co
                 getContext().getLog().error("Failed to send stock quote", exception);
             }
         });
+
+        System.out.println("new quote" + msg.getQuote());
         return this;
     }
 }

@@ -6,34 +6,42 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import org.example.msg.TraderRequest;
-import org.example.msg.ValidationRequest;
-import org.example.msg.ValidationResponse;
+import org.example.model.OrderType;
+import org.example.model.Quote;
+import org.example.model.Stock;
+import org.example.msg.*;
 
 public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
     public interface Command{}
 
     private ActorRef<AuditActor.Command> auditActor;
+    private ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor;
 
-    public TraderActor(ActorContext<TraderActor.Command> context, ActorRef<AuditActor.Command> auditActor) {
+    private int traderId;
+    private static int traderIdCounter;
+
+    public TraderActor(ActorContext<TraderActor.Command> context, ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor) {
         super(context);
         this.auditActor = auditActor;
+        this.quoteGeneratorActor = quoteGeneratorActor;
+        this.traderId = traderIdCounter++;
     }
 
-    public static Behavior<TraderActor.Command> behavior(ActorRef<AuditActor.Command> auditActor){
-        return Behaviors.setup(context -> new TraderActor(context, auditActor));
+    public static Behavior<TraderActor.Command> behavior(ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor){
+        return Behaviors.setup(context -> new TraderActor(context, auditActor, quoteGeneratorActor));
     }
 
     @Override
     public Receive<TraderActor.Command> createReceive() {
         return newReceiveBuilder()
-                .onMessage(TraderRequest.class, this::onTradeRequest)
+                .onMessage(MarketUpdate.class, this::onMarketUpdate)
+                .onMessage(TradeRequest.class, this::onTradeRequest)
                 .onMessage(ValidationResponse.class, this::onValidationResponse)
                 .build();
     }
 
-    private Behavior<Command> onTradeRequest(TraderRequest msg) {
+    private Behavior<Command> onTradeRequest(TradeRequest msg) {
 
         ValidationRequest request = new ValidationRequest(
                 msg.getTraderId(), // assuming verification were handled
@@ -43,11 +51,24 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
         );
 
         auditActor.tell(request);
+        System.out.println("new stock :"+ msg.getStock());
         return this;
     }
 
+    private Behavior<Command> onMarketUpdate(MarketUpdate msg) {
+        if (msg.getQuote().getStock().getTraderId() != this.traderId) {
+            TradeRequest tradeRequest = new TradeRequest(this.traderId, OrderType.BUY,msg.getQuote().getStock());
+            return onTradeRequest(tradeRequest);
+        }
+        return this;
+    }
+
+
     private Behavior<Command> onValidationResponse(ValidationResponse msg) {
-        System.out.println(msg);
+        Stock newStock = msg.getStock();
+        newStock.setTraderId(this.traderId);
+        newStock.setPrice(newStock.getPrice()+10);
+        quoteGeneratorActor.tell(new ProduceQuote(new Quote(newStock)));
         return this;
     }
 }

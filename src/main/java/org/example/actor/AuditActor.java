@@ -11,7 +11,7 @@ import org.example.msg.ValidationResponse;
 
 public class AuditActor extends AbstractBehavior<AuditActor.Command> {
 
-    public static Behavior<AuditActor.Command> behavior(){
+    public static Behavior<AuditActor.Command> behavior() {
         return Behaviors.setup(AuditActor::new);
     }
 
@@ -19,7 +19,8 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
         super(context);
     }
 
-    public interface Command{}
+    public interface Command {
+    }
 
     @Override
     public Receive<Command> createReceive() {
@@ -32,23 +33,32 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
 
         Double balance = FakeDB.traderTable.getOrDefault(msg.getTraderId(), -1.0);
 
-        String description ="";
+        String description = "";
         boolean accepted = false;
 
-        if(balance >= msg.getStock().getPrice()){
+
+        if (balance == -1) {
+            description = "No Trader with this ID";
+            accepted = false;
+        } else if (balance >= msg.getStock().getPrice()) {
             // update database
             FakeDB.traderTable.replace(msg.getTraderId(), balance - msg.getStock().getPrice());
 
+            // give money to the Seller
+            if (msg.getStock().getTraderId() != -1){
+                FakeDB.traderTable.replace(msg.getStock().getTraderId(), FakeDB.traderTable.get(msg.getStock().getTraderId()) + msg.getStock().getPrice());
+            }
+
             description = "Buy order is accepted!";
             accepted = true;
-        }else{
+        } else {
 
             description = "Buy order is rejected! Insufficient balance";
             accepted = false;
         }
 
         // log
-        ValidationResponse response = new ValidationResponse(accepted, msg.getOrderType(), msg.getStock(),description);
+        ValidationResponse response = new ValidationResponse(accepted, msg.getOrderType(), msg.getStock(), description);
         FakeDB.logTable.put(FakeDB.logTable.size(), response.toString());
         msg.getSender().tell(response);
 

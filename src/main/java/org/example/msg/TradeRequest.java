@@ -4,13 +4,13 @@ import org.example.actor.TraderActor;
 import org.example.model.OrderType;
 import org.example.model.Stock;
 
-public class TraderRequest implements TraderActor.Command {
+public class TradeRequest implements TraderActor.Command {
 
     private int traderId;
     private OrderType orderType;
     private Stock stock;
 
-    public TraderRequest(int traderId, OrderType orderType, Stock stock) {
+    public TradeRequest(int traderId, OrderType orderType, Stock stock) {
         this.traderId = traderId;
         this.orderType = orderType;
         this.stock = stock;

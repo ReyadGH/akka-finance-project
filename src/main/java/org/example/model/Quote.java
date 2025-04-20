@@ -57,4 +57,12 @@ public class Quote {
             return null;
         }
     }
+
+    @Override
+    public String toString() {
+        return "Quote{" +
+                "stock=" + stock +
+                ", timestamp=" + timestamp +
+                '}';
+    }
 }
