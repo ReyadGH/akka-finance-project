@@ -47,7 +47,7 @@ public class App {
             quoteGeneratorActor.tell(new ProduceQuote(new Quote( stock)));
         }
 
-        int numberOfTraders =10;
+        int numberOfTraders =6;
 
         for (int i = 0; i < numberOfTraders; i++) {
             FakeDB.traderTable.put(i, 1000.0);

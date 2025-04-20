@@ -144,7 +144,6 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
         } else {
             System.out.println(msg.getTraderId() + " has no money");
             description = "Buy order is rejected! Insufficient balance";
-            accepted = false;
         }
 
         // log

@@ -67,10 +67,26 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
 
     private Behavior<Command> onValidationResponse(ValidationResponse msg) {
-        Stock newStock = msg.getStock();
-        newStock.setTraderId(this.traderId);
-        newStock.setPrice(newStock.getPrice()+10);
-        quoteGeneratorActor.tell(new ProduceQuote(new Quote(newStock)));
+
+        switch (msg.getOrderType()){
+
+            case BUY -> {
+                if (msg.isAccepted()){
+                    Stock newStock = msg.getStock();
+
+                    newStock.setTraderId(this.traderId);
+                    newStock.setPrice(newStock.getPrice()+10);
+                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(newStock)));
+                } else {
+                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(msg.getStock())));
+                }
+            }
+
+            case SELL -> {
+                // not implemented yet
+            }
+        }
+
         return this;
     }
 }
