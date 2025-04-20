@@ -78,7 +78,7 @@ public class App {
                 new String[]{"TSLA", "Tesla Inc"},
                 new String[]{"IBM", "International Business Machines Corp"},
                 new String[]{"ORCL", "Oracle Corp"},
-                new String[]{"STONKS", "Stonks Corp"}
+                new String[]{"STONK", "Stonks Corp"}
         );
 
         List<Stock> stocks = new ArrayList<>();
