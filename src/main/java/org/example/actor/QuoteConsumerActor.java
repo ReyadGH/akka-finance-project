@@ -48,7 +48,7 @@ public class QuoteConsumerActor extends AbstractBehavior<QuoteConsumerActor.Comm
 
         scheduledTask = context.getSystem().scheduler().scheduleAtFixedRate(
                 Duration.ZERO,
-                Duration.ofMillis(2000),
+                Duration.ofMillis(1000),
                 () -> pollKafka(),
                 context.getSystem().executionContext());
     }

@@ -42,7 +42,7 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
         Random random = new Random();
         this.strategy = strategies[random.nextInt(strategies.length)];
-        System.out.println(String.format("Trader %s, uses %s", traderId, strategy));
+        System.out.println(String.format("Trader %s, uses %s", traderId, strategy.getClass()));
     }
 
     public static Behavior<TraderActor.Command> behavior(ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor){
@@ -117,14 +117,14 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
                     newStock.setTraderId(this.traderId);
                     newStock.setPrice(newStock.getPrice() + 10);
-                    System.out.println("Buy accepted now sell: " + newStock);
+//                    System.out.println("Buy accepted now sell: " + newStock);
 
                     if (strategy.evalSell(newStock)) // for now there is no logic for selling always true
                     {
                         auditActor.tell(new ValidationRequest(traderId, newStock, OrderType.SELL, getContext().getSelf()));
                     }
                 }else{
-//                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(msg.getStock())));
+                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(msg.getStock())));
                 }
             }
 

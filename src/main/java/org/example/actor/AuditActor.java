@@ -71,32 +71,60 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
         }
     }
 
-    private Double getTraderMarketBalance(int traderId) {
+    // Get stock from database
+    private Stock getStockById(int stockId) {
         try (Connection conn = getConnection()) {
             PreparedStatement prepareStatement = conn.prepareStatement(
-                    "SELECT market_balance FROM trader WHERE trader_id = ?");
-            prepareStatement.setInt(1, traderId);
+                    "SELECT id, trader_id, symbol, name, price FROM stock WHERE id = ?");
+            prepareStatement.setInt(1, stockId);
             ResultSet rs = prepareStatement.executeQuery();
             if (rs.next()) {
-                return rs.getDouble("market_balance");
+                Stock stock = new Stock();
+                stock.setId(rs.getInt("id"));
+                stock.setTraderId(rs.getInt("trader_id"));
+                stock.setSymbol(rs.getString("symbol"));
+                stock.setName(rs.getString("name"));
+                stock.setPrice(rs.getDouble("price"));
+                return stock;
             }
             return null;
         } catch (SQLException e) {
-            getContext().getLog().error("Failed to get trader market_balance", e);
+            getContext().getLog().error("Failed to get stock", e);
             return null;
         }
     }
 
-
-    private void updateTraderMarketBalance(int traderId, double newBalance) {
+    // Insert or update stock in database
+    private void saveStock(Stock stock) {
         try (Connection conn = getConnection()) {
-            PreparedStatement prepareStatement = conn.prepareStatement(
-                    "UPDATE trader SET market_balance = ? WHERE trader_id = ?");
-            prepareStatement.setDouble(1, newBalance);
-            prepareStatement.setInt(2, traderId);
-            prepareStatement.executeUpdate();
+            PreparedStatement checkStatement = conn.prepareStatement(
+                    "SELECT id FROM stock WHERE id = ?");
+            checkStatement.setInt(1, stock.getId());
+            ResultSet rs = checkStatement.executeQuery();
+
+            if (rs.next()) {
+                // Update existing stock
+                PreparedStatement updateStatement = conn.prepareStatement(
+                        "UPDATE stock SET trader_id = ?, symbol = ?, name = ?, price = ? WHERE id = ?");
+                updateStatement.setInt(1, stock.getTraderId());
+                updateStatement.setString(2, stock.getSymbol());
+                updateStatement.setString(3, stock.getName());
+                updateStatement.setDouble(4, stock.getPrice());
+                updateStatement.setInt(5, stock.getId());
+                updateStatement.executeUpdate();
+            } else {
+                // Insert new stock
+                PreparedStatement insertStatement = conn.prepareStatement(
+                        "INSERT INTO stock (id, trader_id, symbol, name, price) VALUES (?, ?, ?, ?, ?)");
+                insertStatement.setInt(1, stock.getId());
+                insertStatement.setInt(2, stock.getTraderId());
+                insertStatement.setString(3, stock.getSymbol());
+                insertStatement.setString(4, stock.getName());
+                insertStatement.setDouble(5, stock.getPrice());
+                insertStatement.executeUpdate();
+            }
         } catch (SQLException e) {
-            getContext().getLog().error("Failed to update trader market_balance", e);
+            getContext().getLog().error("Failed to save stock", e);
         }
     }
 
@@ -132,16 +160,12 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
     }
 
     private Behavior<Command> onValidate(ValidationRequest msg) {
-
-
         String description = "Unknown";
         boolean accepted = false;
         ValidationResponse response = new ValidationResponse();
 
-//        System.out.println(msg);
         switch (msg.getOrderType()) {
             case BUY -> {
-//                System.out.println(buyer);
                 int buyer = msg.getTraderId();
                 Double buyerBalance = getTraderBalance(buyer);
 
@@ -151,11 +175,11 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
                 } else if (buyerBalance >= stockPrice) { // buyer can afford the stock
 
                     int seller = msg.getStock().getTraderId();
-                    Stock stockDB = FakeDB.stockTable.getOrDefault(msg.getStock().getId(), null);
+                    Stock stockDB = getStockById(msg.getStock().getId());
 
-                    if (stockDB == null){
-                        FakeDB.stockTable.put(msg.getStock().getId(),msg.getStock());
-                        stockDB =msg.getStock();
+                    if (stockDB == null) {
+                        saveStock(msg.getStock());
+                        stockDB = msg.getStock();
                     }
 
                     // if the stock have same seller as the request that means it is new
@@ -163,20 +187,19 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
                         description = "Buy order is accepted!";
                         accepted = true;
 
-                        // we checked before if buyer and seller exist so no need to check here
-                        Double buyerMarketBalance = getTraderMarketBalance(buyer);
-
                         // update buyer balance
                         updateTraderBalance(buyer, buyerBalance - stockPrice); // buyer
-                        updateTraderMarketBalance(buyer,buyerMarketBalance + stockPrice);
+
+                        // Update stock owner to the buyer
+                        Stock updatedStock = stockDB;
+                        updatedStock.setTraderId(buyer);
+                        saveStock(updatedStock);
 
                         // update seller balance if not system "-1"
-                        if (seller != -1){
+                        if (seller != -1) {
                             Double sellerBalance = getTraderBalance(msg.getStock().getTraderId());
-                            Double sellerMarketBalance = getTraderMarketBalance(msg.getStock().getTraderId());
                             if (sellerBalance != null) {
                                 updateTraderBalance(seller, sellerBalance + stockPrice); // seller
-                                updateTraderMarketBalance(seller, sellerMarketBalance - (stockPrice -50.0)); // mitigate the sell price to count the price addition to stock
                             }
                         }
 
@@ -184,7 +207,7 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
                         description = "Buy order is rejected! Old stock";
                     }
                 } else {
-                    System.out.println(buyer + " has no money");
+//                    System.out.println(buyer + " has no money");
                     description = "Buy order is rejected! Insufficient balance";
                 }
 
@@ -197,11 +220,9 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
             }
         }
 
-
         // log
         logTransaction(response, msg); // log the transaction
         msg.getSender().tell(response); // tell the sender to make decision
 
         return this;
-    }
-}
+    }}

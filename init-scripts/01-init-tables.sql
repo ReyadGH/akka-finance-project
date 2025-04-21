@@ -1,8 +1,7 @@
 -- Create Trader table
 CREATE TABLE Trader (
     trader_id SERIAL PRIMARY KEY,
-    balance DOUBLE PRECISION NOT NULL,
-    market_balance DOUBLE PRECISION NOT NULL
+    balance DOUBLE PRECISION NOT NULL
 );
 
 -- Create AuditLogs table
@@ -16,4 +15,12 @@ CREATE TABLE AuditLogs (
     description TEXT,
     price DOUBLE PRECISION NOT NULL,
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE Stock (
+    id INT PRIMARY KEY,
+    trader_id INT,
+    symbol VARCHAR(10),
+    name VARCHAR(100),
+    price DOUBLE PRECISION NOT NULL
 );

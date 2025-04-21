@@ -39,7 +39,7 @@ public class App {
             quoteGeneratorActor.tell(new ProduceQuote(new Quote( stock)));
         }
 
-        int numberOfTraders =3;
+        int numberOfTraders =10;
 
 
         // keep auditActor as single thread to stop racing condition (this is temp fix)
@@ -91,3 +91,10 @@ public class App {
 
 // docker exec -it kafka /bin/bash
 // kafka-console-consumer.sh --bootstrap-server localhost:9092 --topic stock-quotes --from-beginning
+
+/*
+ SELECT s.trader_id, t.balance, SUM(s.price) AS stock_value, (t.balance + SUM(s.price)) AS total_money
+ FROM stock s
+ JOIN trader t ON s.trader_id = t.trader_id
+ GROUP BY s.trader_id, t.balance;
+*/
