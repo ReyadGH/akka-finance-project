@@ -6,6 +6,7 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
+import org.example.model.Order;
 import org.example.model.OrderType;
 import org.example.model.Quote;
 import org.example.model.Stock;
@@ -15,6 +16,7 @@ import org.example.trading.OnlyBuyCheapAlwaysSellTradingStrategy;
 import org.example.trading.RandomTradingStrategy;
 import org.example.trading.TradingStrategy;
 
+import java.util.List;
 import java.util.Random;
 
 public class TraderActor extends AbstractBehavior<TraderActor.Command> {
@@ -42,6 +44,7 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
         Random random = new Random();
         this.strategy = strategies[random.nextInt(strategies.length)];
+        System.out.println(String.format("Trader %s, uses %s", traderId, strategy));
     }
 
     public static Behavior<TraderActor.Command> behavior(ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor){
@@ -65,7 +68,6 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
                 msg.getOrderType(),
                 getContext().getSelf()
         );
-
         auditActor.tell(request);
 //        System.out.println("new stock :"+ msg.getStock());
         return this;
@@ -75,9 +77,20 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
         if (msg.getQuote().getStock().getTraderId() != this.traderId) {
             // call strategy should be here
 
-            TradeRequest tradeRequest = new TradeRequest(this.traderId, OrderType.BUY,msg.getQuote().getStock());
+//            TradeRequest tradeRequest = new TradeRequest(this.traderId, OrderType.BUY,msg.getQuote().getStock());
+//
+//            return onTradeRequest(tradeRequest);
 
-            return onTradeRequest(tradeRequest);
+            List<Order> orders=strategy.eval(msg.getQuote().getStock());
+
+            for (Order order: orders){
+                if (order.getOrderType() == OrderType.BUY){
+                    getContext().getSelf().tell(new TradeRequest(traderId,OrderType.BUY,order.getStock()));
+                }else {
+                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(order.getStock())));
+                }
+            }
+
         }else{
 //            System.out.println("i want to buy");
         }
@@ -87,24 +100,26 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
     private Behavior<Command> onValidationResponse(ValidationResponse msg) {
 
-        switch (msg.getOrderType()){
+//        switch (msg.getOrderType()){
+//
+//            case BUY -> {
+//                if (msg.isAccepted()){
+//                    Stock newStock = msg.getStock();
+//
+//                    newStock.setTraderId(this.traderId);
+//                    newStock.setPrice(newStock.getPrice()+10);
+//                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(newStock)));
+//                } else {
+//                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(msg.getStock())));
+//                }
+//            }
+//
+//            case SELL -> {
+//                // not implemented yet
+//            }
+//        }
 
-            case BUY -> {
-                if (msg.isAccepted()){
-                    Stock newStock = msg.getStock();
-
-                    newStock.setTraderId(this.traderId);
-                    newStock.setPrice(newStock.getPrice()+10);
-                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(newStock)));
-                } else {
-                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(msg.getStock())));
-                }
-            }
-
-            case SELL -> {
-                // not implemented yet
-            }
-        }
+        strategy.portfolioUpdate(msg.getOrderType(),msg.getStock());
 
         return this;
     }

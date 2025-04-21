@@ -48,7 +48,6 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
                     "SELECT balance FROM trader WHERE trader_id = ?");
             prepareStatement.setInt(1, traderId);
             ResultSet rs = prepareStatement.executeQuery();
-            System.out.println(rs.findColumn("balance"));
             if (rs.next()) {
                 return rs.getDouble("balance");
             }
