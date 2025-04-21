@@ -6,17 +6,15 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import org.example.model.Order;
 import org.example.model.OrderType;
 import org.example.model.Quote;
 import org.example.model.Stock;
 import org.example.msg.*;
-import org.example.trading.AlwaysBuyAndSellTradingStrategy;
+import org.example.trading.AlwaysBuyAlwaysSellTradingStrategy;
 import org.example.trading.OnlyBuyCheapAlwaysSellTradingStrategy;
-import org.example.trading.RandomTradingStrategy;
+import org.example.trading.RandomBuyAlwaysSellTradingStrategy;
 import org.example.trading.TradingStrategy;
 
-import java.util.List;
 import java.util.Random;
 
 public class TraderActor extends AbstractBehavior<TraderActor.Command> {
@@ -37,8 +35,8 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
         this.traderId = traderIdCounter++ + 1;
 
         TradingStrategy[] strategies = {
-                new AlwaysBuyAndSellTradingStrategy(),
-                new RandomTradingStrategy(),
+                new AlwaysBuyAlwaysSellTradingStrategy(),
+                new RandomBuyAlwaysSellTradingStrategy(),
                 new OnlyBuyCheapAlwaysSellTradingStrategy()
         };
 
@@ -75,24 +73,15 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
     private Behavior<Command> onMarketUpdate(MarketUpdate msg) {
         if (msg.getQuote().getStock().getTraderId() != this.traderId) {
-            // call strategy should be here
 
-//            TradeRequest tradeRequest = new TradeRequest(this.traderId, OrderType.BUY,msg.getQuote().getStock());
-//
-//            return onTradeRequest(tradeRequest);
+            boolean buy = strategy.evalBuy(msg.getQuote().getStock());
 
-            List<Order> orders=strategy.eval(msg.getQuote().getStock());
-
-            for (Order order: orders){
-                if (order.getOrderType() == OrderType.BUY){
-                    getContext().getSelf().tell(new TradeRequest(traderId,OrderType.BUY,order.getStock()));
-                }else {
-                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(order.getStock())));
-                }
+            if (buy){
+                TradeRequest tradeRequest = new TradeRequest(this.traderId, OrderType.BUY, msg.getQuote().getStock());
+                return onTradeRequest(tradeRequest);
             }
-
         }else{
-//            System.out.println("i want to buy");
+//            System.out.println("this is my stock");
         }
         return this;
     }
@@ -118,8 +107,40 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 //                // not implemented yet
 //            }
 //        }
+        // if buy order succeeds then sell
 
-        strategy.portfolioUpdate(msg.getOrderType(),msg.getStock());
+        switch (msg.getOrderType()){
+            case BUY -> {
+                if (msg.isAccepted()) { // if buy & accepted evaluate selling
+
+                    Stock newStock = msg.getStock();
+
+                    newStock.setTraderId(this.traderId);
+                    newStock.setPrice(newStock.getPrice() + 10);
+                    System.out.println("Buy accepted now sell: " + newStock);
+
+                    if (strategy.evalSell(newStock)) // for now there is no logic for selling always true
+                    {
+                        auditActor.tell(new ValidationRequest(traderId, newStock, OrderType.SELL, getContext().getSelf()));
+                    }
+                }else{
+//                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(msg.getStock())));
+                }
+            }
+
+            case SELL -> {
+                if (msg.isAccepted()){
+                    quoteGeneratorActor.tell(new ProduceQuote(new Quote(msg.getStock())));
+                }else{ // try again to sell
+                    if (strategy.evalSell(msg.getStock())) // for now there is no logic for selling always true
+                    {
+                        auditActor.tell(new ValidationRequest(traderId, msg.getStock(), OrderType.SELL, getContext().getSelf()));
+                    }
+                }
+            }
+        }
+
+
 
         return this;
     }

@@ -19,6 +19,10 @@ public class ValidationResponse  implements TraderActor.Command {
         this.description = description;
     }
 
+    public ValidationResponse() {
+
+    }
+
     public OrderType getOrderType() {
         return orderType;
     }

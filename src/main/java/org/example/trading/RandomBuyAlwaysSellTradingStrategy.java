@@ -8,12 +8,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class OnlyBuyCheapAlwaysSellTradingStrategy extends TradingStrategy {
-
+public class RandomBuyAlwaysSellTradingStrategy extends TradingStrategy {
     @Override
     public boolean evalBuy(Stock stock) {
 
-        if (stock.getPrice() <= 50.0){
+        Random random = new Random();
+
+        if (random.nextBoolean()){
             return true;
         }
 

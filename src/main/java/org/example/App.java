@@ -33,13 +33,13 @@ public class App {
 
         ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor = ActorSystem.create(QuoteGeneratorActor.behavior(producer), "quoteGenerator");
 
-        List<Stock> stocks = generateStonks(1);
+        List<Stock> stocks = generateStonks(10);
 
         for (Stock stock : stocks) {
             quoteGeneratorActor.tell(new ProduceQuote(new Quote( stock)));
         }
 
-        int numberOfTraders =5;
+        int numberOfTraders =3;
 
 
         // keep auditActor as single thread to stop racing condition (this is temp fix)

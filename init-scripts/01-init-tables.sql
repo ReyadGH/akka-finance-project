@@ -1,7 +1,8 @@
 -- Create Trader table
 CREATE TABLE Trader (
     trader_id SERIAL PRIMARY KEY,
-    balance DOUBLE PRECISION NOT NULL
+    balance DOUBLE PRECISION NOT NULL,
+    market_balance DOUBLE PRECISION NOT NULL
 );
 
 -- Create AuditLogs table
