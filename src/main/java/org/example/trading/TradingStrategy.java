@@ -1,6 +1,6 @@
 package org.example.trading;
 
-import org.example.model.Stock;
+import org.example.protocol.Stock;
 
 public abstract class TradingStrategy {
 

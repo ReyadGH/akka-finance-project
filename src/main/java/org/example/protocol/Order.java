@@ -1,4 +1,4 @@
-package org.example.model;
+package org.example.protocol;
 
 public class Order extends Quote {
     private OrderType orderType;

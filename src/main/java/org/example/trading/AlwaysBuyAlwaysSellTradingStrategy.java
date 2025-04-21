@@ -1,8 +1,6 @@
 package org.example.trading;
 
-import org.example.model.Order;
-import org.example.model.OrderType;
-import org.example.model.Stock;
+import org.example.protocol.Stock;
 
 public class AlwaysBuyAlwaysSellTradingStrategy extends TradingStrategy {
 

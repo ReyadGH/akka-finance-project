@@ -1,4 +1,4 @@
-package org.example.model;
+package org.example.protocol;
 
 public class Stock {
     private static int counter =0;

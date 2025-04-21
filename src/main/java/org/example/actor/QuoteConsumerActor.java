@@ -12,8 +12,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.example.model.Quote;
-import org.example.msg.MarketUpdate;
+import org.example.protocol.Quote;
+import org.example.message.MarketUpdate;
 
 import java.time.Duration;
 import java.util.Collections;

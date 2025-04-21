@@ -1,12 +1,7 @@
 package org.example.trading;
 
-import org.example.model.Order;
-import org.example.model.OrderType;
-import org.example.model.Stock;
+import org.example.protocol.Stock;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 public class OnlyBuyCheapAlwaysSellTradingStrategy extends TradingStrategy {
 
