@@ -8,10 +8,11 @@ services:
     environment:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
+      POSTGRES_DB: finance-app
     ports:
       - 5432:5432
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
 
   adminer:
     image: adminer
@@ -29,8 +30,6 @@ services:
     ports:
       - "9092:9092"
       - "9094:9094"
-    volumes:
-      - "kafka_data:/bitnami"
     environment:
       - KAFKA_ENABLE_KRAFT=yes
       - KAFKA_CFG_PROCESS_ROLES=broker,controller
@@ -46,20 +45,19 @@ services:
       - BITNAMI_DEBUG=yes
       - KAFKA_CFG_NUM_PARTITIONS=2
 
-#  kafka-ui:
-#    container_name: kafka-ui
-#    image: provectuslabs/kafka-ui:latest
-#    depends_on:
-#      - kafka
-#    ports:
-#      - 8081:8080
-#    environment:
-#      DYNAMIC_CONFIG_ENABLED: 'true'
-#      LOGGING_LEVEL_ROOT: 'DEBUG'
-#    volumes:
-#      - /c/tools/kafka/kui/config.yml:/etc/kafkaui/dynamic_config.yaml
+  kafka-ui:
+    container_name: kafka-ui
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+    ports:
+      - 8081:8080
+    environment:
+      DYNAMIC_CONFIG_ENABLED: 'true'
+      LOGGING_LEVEL_ROOT: 'DEBUG'
+      KAFKA_CLUSTERS_0_NAME: kafka
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9094
 
 volumes:
-  pgdata:
   kafka_data:
     driver: local

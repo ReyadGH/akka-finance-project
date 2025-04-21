@@ -6,6 +6,8 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import org.example.dao.FakeDB;
+import org.example.model.Quote;
+import org.example.model.Stock;
 import org.example.msg.ValidationRequest;
 import org.example.msg.ValidationResponse;
 
@@ -24,7 +26,6 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
     public AuditActor(ActorContext<Command> context) {
 
         super(context);
-        initDatabase();
     }
 
     public interface Command {
@@ -41,39 +42,13 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
         return DriverManager.getConnection(dbUrl, dbUser, dbPassword);
     }
 
-    private void initDatabase() {
-        try (Connection conn = getConnection()) {
-            Statement stmt = conn.createStatement();
-
-            // if not exists make the traders table (this maybe not very useful but it does the job)
-            stmt.execute("CREATE TABLE IF NOT EXISTS traders " +
-                    "(id INTEGER PRIMARY KEY, balance DECIMAL(15,2))");
-
-            // if not exists make the log table
-            stmt.execute("CREATE TABLE IF NOT EXISTS audit_log " +
-                    "(id SERIAL PRIMARY KEY, " +
-                    "trader_id INTEGER NOT NULL, " +
-                    "stock_id INTEGER NOT NULL, " +
-                    "stock_name VARCHAR(255), " +
-                    "stock_price DECIMAL(15,2), " +
-                    "stock_seller_id INTEGER, " +
-                    "order_type VARCHAR(50) NOT NULL, " +
-                    "accepted BOOLEAN NOT NULL, " +
-                    "description TEXT NOT NULL, " +
-                    "timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP)");
-
-        } catch (SQLException e) {
-            getContext().getLog().error("Database initialization failed", e);
-        }
-    }
-
     private Double getTraderBalance(int traderId) {
         try (Connection conn = getConnection()) {
             PreparedStatement prepareStatement = conn.prepareStatement(
-                    "SELECT balance FROM traders WHERE id = ?");
+                    "SELECT balance FROM trader WHERE trader_id = ?");
             prepareStatement.setInt(1, traderId);
             ResultSet rs = prepareStatement.executeQuery();
-
+            System.out.println(rs.findColumn("balance"));
             if (rs.next()) {
                 return rs.getDouble("balance");
             }
@@ -87,7 +62,7 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
     private void updateTraderBalance(int traderId, double newBalance) {
         try (Connection conn = getConnection()) {
             PreparedStatement prepareStatement = conn.prepareStatement(
-                    "UPDATE traders SET balance = ? WHERE id = ?");
+                    "UPDATE trader SET balance = ? WHERE trader_id = ?");
             prepareStatement.setDouble(1, newBalance);
             prepareStatement.setInt(2, traderId);
             prepareStatement.executeUpdate();
@@ -97,59 +72,92 @@ public class AuditActor extends AbstractBehavior<AuditActor.Command> {
     }
 
     private void logTransaction(ValidationResponse response, ValidationRequest request) {
+
         try (Connection conn = getConnection()) {
-            PreparedStatement prepareStatement = conn.prepareStatement(
-                    "INSERT INTO audit_log (trader_id, stock_id, stock_name, stock_price, stock_seller_id, " +
-                            "order_type, accepted, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement stmt = conn.prepareStatement(
+                    "INSERT INTO AuditLogs (buyer_id, stock_id, seller_id, order_type, accepted, description, price) " +
+                            "VALUES (?, ?, ?, ?, ?, ?, ?)");
 
-            prepareStatement.setInt(1, request.getTraderId());
-            prepareStatement.setInt(2, request.getStock().getId());
-            prepareStatement.setString(3, request.getStock().getName());
-            prepareStatement.setDouble(4, request.getStock().getPrice());
-            prepareStatement.setInt(5, request.getStock().getTraderId());
-            prepareStatement.setString(6, request.getOrderType().toString());
-            prepareStatement.setBoolean(7, response.isAccepted());
-            prepareStatement.setString(8, response.getDescription());
+            stmt.setInt(1, request.getTraderId());
+            stmt.setInt(2, request.getStock().getId());
 
-            prepareStatement.executeUpdate();
+
+            int sellerId = request.getStock().getTraderId();
+            if (sellerId == -1) {
+                stmt.setNull(3, java.sql.Types.INTEGER);
+            } else {
+                stmt.setInt(3, sellerId);
+            }
+
+            stmt.setString(4, request.getOrderType().toString());
+            stmt.setBoolean(5, response.isAccepted());
+            stmt.setString(6, response.getDescription());
+            stmt.setDouble(7, request.getStock().getPrice());
+
+            stmt.executeUpdate();
+
         } catch (SQLException e) {
             getContext().getLog().error("Failed to log transaction", e);
         }
     }
 
     private Behavior<Command> onValidate(ValidationRequest msg) {
-        Double balance = getTraderBalance(msg.getTraderId());
 
-        String description = "";
+
+        String description = "Unknown";
         boolean accepted = false;
+//        System.out.println(msg);
+        switch (msg.getOrderType()) {
+            case BUY -> {
+//                System.out.println(msg.getTraderId());
+                Double buyerBalance = getTraderBalance(msg.getTraderId());
+                double stockPrice = msg.getStock().getPrice();
+                if (buyerBalance == null) {
+                    description = "No Trader with this ID: " + msg.getTraderId();
+                } else if (buyerBalance >= stockPrice) { // buyer can afford the stock
 
-        if (balance == null) {
-            description = "No Trader with this ID";
-            accepted = false;
-        } else if (balance >= msg.getStock().getPrice()) {
+                    int seller = msg.getStock().getTraderId();
+                    Stock stockDB = FakeDB.stockTable.getOrDefault(msg.getStock().getId(), null);
 
-            // check seller
-            int seller = msg.getStock().getTraderId();
-            Double sellerBalance = getTraderBalance(seller);
-            boolean isSeller = sellerBalance != null;
+                    if (stockDB == null){
+                        FakeDB.stockTable.put(msg.getStock().getId(),msg.getStock());
+                        stockDB =msg.getStock();
+                    }
 
-            // take money from Buyer and give to Seller
-            if (msg.getStock().getTraderId() != -1 && isSeller) {
-                updateTraderBalance(msg.getTraderId(), balance - msg.getStock().getPrice());
-                updateTraderBalance(seller, sellerBalance + msg.getStock().getPrice());
+                    // if the stock have same seller as the request that means it is new
+                    if (seller == stockDB.getTraderId()) {
+                        description = "Buy order is accepted!";
+                        accepted = true;
+
+                        // update buyer balance
+                        updateTraderBalance(msg.getTraderId(), buyerBalance - stockPrice); // buyer
+
+                        // update seller balance if not system "-1"
+                        if (seller != -1){
+                            Double sellerBalance = getTraderBalance(msg.getStock().getTraderId());
+                            updateTraderBalance(seller, sellerBalance + stockPrice); // seller
+                        }
+
+                    } else {
+                        description = "Buy order is rejected! Old stock";
+                    }
+                } else {
+                    System.out.println(msg.getTraderId() + " has no money");
+                    description = "Buy order is rejected! Insufficient balance";
+                }
             }
-
-            description = "Buy order is accepted!";
-            accepted = true;
-        } else {
-            System.out.println(msg.getTraderId() + " has no money");
-            description = "Buy order is rejected! Insufficient balance";
+            case SELL -> {
+                description = "Sell order is accepted!";
+                accepted = true;
+            }
         }
+
 
         // log
         ValidationResponse response = new ValidationResponse(accepted, msg.getOrderType(), msg.getStock(), description);
-        logTransaction(response, msg);
-        msg.getSender().tell(response);
+        logTransaction(response, msg); // log the transaction
+        msg.getSender().tell(response); // tell the sender to make decision
 
         return this;
-    }}
+    }
+}

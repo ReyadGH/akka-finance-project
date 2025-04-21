@@ -10,6 +10,12 @@ import org.example.model.OrderType;
 import org.example.model.Quote;
 import org.example.model.Stock;
 import org.example.msg.*;
+import org.example.trading.AlwaysBuyAndSellTradingStrategy;
+import org.example.trading.OnlyBuyCheapAlwaysSellTradingStrategy;
+import org.example.trading.RandomTradingStrategy;
+import org.example.trading.TradingStrategy;
+
+import java.util.Random;
 
 public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
@@ -20,12 +26,22 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
     private int traderId;
     private static int traderIdCounter;
+    private TradingStrategy strategy;
 
     public TraderActor(ActorContext<TraderActor.Command> context, ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor) {
         super(context);
         this.auditActor = auditActor;
         this.quoteGeneratorActor = quoteGeneratorActor;
-        this.traderId = traderIdCounter++;
+        this.traderId = traderIdCounter++ + 1;
+
+        TradingStrategy[] strategies = {
+                new AlwaysBuyAndSellTradingStrategy(),
+                new RandomTradingStrategy(),
+                new OnlyBuyCheapAlwaysSellTradingStrategy()
+        };
+
+        Random random = new Random();
+        this.strategy = strategies[random.nextInt(strategies.length)];
     }
 
     public static Behavior<TraderActor.Command> behavior(ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor){
@@ -57,7 +73,10 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
     private Behavior<Command> onMarketUpdate(MarketUpdate msg) {
         if (msg.getQuote().getStock().getTraderId() != this.traderId) {
+            // call strategy should be here
+
             TradeRequest tradeRequest = new TradeRequest(this.traderId, OrderType.BUY,msg.getQuote().getStock());
+
             return onTradeRequest(tradeRequest);
         }else{
 //            System.out.println("i want to buy");

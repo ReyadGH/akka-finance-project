@@ -5,24 +5,16 @@ import akka.actor.typed.ActorRef;
 import akka.actor.typed.ActorSystem;
 import akka.actor.typed.javadsl.PoolRouter;
 import akka.actor.typed.javadsl.Routers;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.producer.*;
-import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.example.actor.AuditActor;
 import org.example.actor.QuoteConsumerActor;
 import org.example.actor.QuoteGeneratorActor;
 import org.example.actor.TraderActor;
 import org.example.dao.FakeDB;
-import org.example.model.OrderType;
 import org.example.model.Quote;
 import org.example.model.Stock;
-import org.example.msg.MarketUpdate;
 import org.example.msg.ProduceQuote;
-import org.example.msg.TradeRequest;
 
 import java.time.Duration;
 import java.util.*;
@@ -41,17 +33,14 @@ public class App {
 
         ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor = ActorSystem.create(QuoteGeneratorActor.behavior(producer), "quoteGenerator");
 
-        List<Stock> stocks = generateStonks(2);
+        List<Stock> stocks = generateStonks(1);
 
         for (Stock stock : stocks) {
             quoteGeneratorActor.tell(new ProduceQuote(new Quote( stock)));
         }
 
-        int numberOfTraders =6;
+        int numberOfTraders =5;
 
-        for (int i = 0; i < numberOfTraders; i++) {
-            FakeDB.traderTable.put(i, 1000.0);
-        }
 
         // keep auditActor as single thread to stop racing condition (this is temp fix)
         ActorRef<AuditActor.Command> auditActor = ActorSystem.create(AuditActor.behavior(), "tradingAudit");
