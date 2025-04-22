@@ -6,6 +6,6 @@ COPY pom.xml /usr/src/app
 RUN mvn clean package
 
 FROM eclipse-temurin:17
-COPY --from=build /usr/src/app/target/demo-0.0.1-SNAPSHOT.jar /usr/app/demo-0.0.1-SNAPSHOT.jar
+COPY /usr/src/app/target/akka-finance-project-1.0-SNAPSHOT.jar /usr/app/akka-finance-project-1.0-SNAPSHOT.jar
 EXPOSE 8080
-ENTRYPOINT ["java","-jar","/usr/app/demo-0.0.1-SNAPSHOT.jar"]
+ENTRYPOINT ["java","-jar","/usr/app/akka-finance-project-1.0-SNAPSHOT.jar"]
