@@ -11,6 +11,7 @@ The system consists of three main components:
 3. **Audit Service**: Validates trades and maintains the system state in PostgreSQL
 
 ## Architecture
+
 ![System Components](imgs/system_components.png)
 
 - **Akka Actor System**: Used for handling concurrent operations and message passing
@@ -84,6 +85,17 @@ The system uses PostgreSQL to store trader information, stock data, and transact
 - **Stock**: Contains stock information including symbol, name, price, and ownership
 - **AuditLogs**: Records all transaction details for auditing and analysis
 
+### Database Initialization
+Database tables are automatically created during startup using the SQL scripts in the `init-scripts` directory mounted to the PostgreSQL container:
+
+- The database is pre-configured with 10 traders, each with an initial balance of 1000.00
+- To add more traders, modify the `02-insert-data.sql` file in the `init-scripts` directory
+
+### Customizing the Application
+To change the number of traders the system creates:
+- Modify the line `List<Stock> stocks = generateStonks(10);` in `App.java`
+- The parameter (10) determines how many stock variations are generated per symbol
+
 ### Running the Application
 ```bash
 mvn clean package
@@ -94,11 +106,11 @@ java -jar target/financial-app.jar
 After running the application:
 
 1. Access Adminer at http://localhost:8080
-    - System: PostgreSQL
-    - Server: database
-    - Username: root
-    - Password: root
-    - Database: finance-app
+   - System: PostgreSQL
+   - Server: database
+   - Username: root
+   - Password: root
+   - Database: finance-app
 
 2. Access Kafka-UI at http://localhost:8081 to monitor the Kafka topics and messages
 
