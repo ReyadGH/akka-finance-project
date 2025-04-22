@@ -56,7 +56,7 @@ The detailed message flow between system components is illustrated below:
 * **Builder Pattern Implementation**: Apply the Builder pattern for complex object creation, especially for Stock and Quote objects.
 
 * **Dynamic Strategy Assignment**: Enable traders to switch strategies dynamically based on market conditions and performance metrics.
-
+* **Unit Testing with Akka TestKit**: Implement comprehensive unit tests using Akka's TestKit to verify actor behavior, message handling, and trading strategy logic in isolation.
 ## Setup and Running Instructions
 
 ### Prerequisites
