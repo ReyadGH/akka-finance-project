@@ -60,7 +60,7 @@ The detailed message flow between system components is illustrated below:
 ## Setup and Running Instructions
 
 ### Prerequisites
-- Java 11+ (eclipse-temurin:24)
+- Java 11+ (Eclipse Temurin 21.0.7+6-LTS)
 - Docker for Kafka and PostgreSQL
 - Maven
 
@@ -118,11 +118,6 @@ Key configuration options:
 * **Number of Traders**: Determines how many trader actors compete in the market
 * **Stock Symbols**: Defines which companies are available for trading
 
-### Running the Application
-```bash
-mvn clean package
-java -jar target/financial-app.jar
-```
 
 ### Monitoring the System
 After running the application:
