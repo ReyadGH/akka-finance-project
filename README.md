@@ -91,10 +91,32 @@ Database tables are automatically created during startup using the SQL scripts i
 - The database is pre-configured with 10 traders, each with an initial balance of 1000.00
 - To add more traders, modify the `02-insert-data.sql` file in the `init-scripts` directory
 
-### Customizing the Application
-To change the number of traders the system creates:
-- Modify the line `List<Stock> stocks = generateStonks(10);` in `App.java`
-- The parameter (10) determines how many stock variations are generated per symbol
+### Customizing the Simulation
+
+The trading simulation can be configured by modifying several key parameters in the `App.java` file:
+
+```java
+// Controls how many price variations are generated for each stock symbol
+// With 5 stock symbols and a value of 10, there will be 50 total stock quotes
+List<Stock> stocks = generateStonks(10);
+
+// Sets the number of trader actors that will participate in the simulation
+int numberOfTraders = 10;
+
+// Defines the stock symbols and company names used in the simulation
+List<String[]> stockSymbolNames = Arrays.asList(
+    new String[]{"GOOGL", "Alphabet Inc"},
+    new String[]{"TSLA", "Tesla Inc"},
+    new String[]{"IBM", "International Business Machines Corp"},
+    new String[]{"ORCL", "Oracle Corp"},
+    new String[]{"STONK", "Stonks Corp"}
+);
+```
+
+Key configuration options:
+* **Stock Variants (`generateStonks` parameter)**: Controls market activity volume by generating multiple price points per stock
+* **Number of Traders**: Determines how many trader actors compete in the market
+* **Stock Symbols**: Defines which companies are available for trading
 
 ### Running the Application
 ```bash
