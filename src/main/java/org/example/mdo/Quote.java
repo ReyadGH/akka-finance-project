@@ -1,4 +1,4 @@
-package org.example.protocol;
+package org.example.mdo;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 

@@ -3,8 +3,8 @@ package org.example.message;
 import akka.actor.typed.ActorRef;
 import org.example.actor.AuditActor;
 import org.example.actor.TraderActor;
-import org.example.protocol.OrderType;
-import org.example.protocol.Stock;
+import org.example.mdo.OrderType;
+import org.example.mdo.Stock;
 
 public class ValidationRequest implements AuditActor.Command{
 

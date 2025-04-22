@@ -1,6 +1,6 @@
 package org.example.trading;
 
-import org.example.protocol.Stock;
+import org.example.mdo.Stock;
 
 
 public class OnlyBuyCheapAlwaysSellTradingStrategy extends TradingStrategy {
@@ -8,10 +8,11 @@ public class OnlyBuyCheapAlwaysSellTradingStrategy extends TradingStrategy {
     @Override
     public boolean evalBuy(Stock stock) {
 
-        if (stock.getPrice() <= 50.0){
-            return true;
-        }
+        return stock.getPrice() <= 50.0;
+    }
 
-        return false;
+    @Override
+    public boolean evalSell(Stock stock) {
+        return true;
     }
 }

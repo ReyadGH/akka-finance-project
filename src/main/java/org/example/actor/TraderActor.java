@@ -6,9 +6,9 @@ import akka.actor.typed.javadsl.AbstractBehavior;
 import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
-import org.example.protocol.OrderType;
-import org.example.protocol.Quote;
-import org.example.protocol.Stock;
+import org.example.mdo.OrderType;
+import org.example.mdo.Quote;
+import org.example.mdo.Stock;
 import org.example.message.*;
 import org.example.trading.AlwaysBuyAlwaysSellTradingStrategy;
 import org.example.trading.OnlyBuyCheapAlwaysSellTradingStrategy;
@@ -21,12 +21,12 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
     public interface Command{}
 
-    private ActorRef<AuditActor.Command> auditActor;
-    private ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor;
+    private final ActorRef<AuditActor.Command> auditActor;
+    private final ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor;
 
-    private int traderId;
+    private final int traderId;
     private static int traderIdCounter;
-    private TradingStrategy strategy;
+    private final TradingStrategy strategy;
 
     public TraderActor(ActorContext<TraderActor.Command> context, ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor) {
         super(context);
@@ -42,7 +42,7 @@ public class TraderActor extends AbstractBehavior<TraderActor.Command> {
 
         Random random = new Random();
         this.strategy = strategies[random.nextInt(strategies.length)];
-        System.out.println(String.format("Trader %s, uses %s", traderId, strategy.getClass()));
+        System.out.printf("Trader %s, uses %s%n", traderId, strategy.getClass());
     }
 
     public static Behavior<TraderActor.Command> behavior(ActorRef<AuditActor.Command> auditActor, ActorRef<QuoteGeneratorActor.Command> quoteGeneratorActor){

@@ -6,8 +6,8 @@ import akka.actor.typed.javadsl.ActorContext;
 import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import org.example.dao.FinanceDAO;
-import org.example.protocol.OrderType;
-import org.example.protocol.Stock;
+import org.example.mdo.OrderType;
+import org.example.mdo.Stock;
 import org.example.message.ValidationRequest;
 import org.example.message.ValidationResponse;
 

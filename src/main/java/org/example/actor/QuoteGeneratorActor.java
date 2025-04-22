@@ -7,7 +7,7 @@ import akka.actor.typed.javadsl.Behaviors;
 import akka.actor.typed.javadsl.Receive;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
-import org.example.protocol.Quote;
+import org.example.mdo.Quote;
 import org.example.message.ProduceQuote;
 
 public class QuoteGeneratorActor extends AbstractBehavior<QuoteGeneratorActor.Command> {

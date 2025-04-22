@@ -1,13 +1,11 @@
 package org.example.trading;
 
-import org.example.protocol.Stock;
+import org.example.mdo.Stock;
 
 public abstract class TradingStrategy {
 
     public abstract boolean evalBuy(Stock stock);
 
-    public boolean evalSell(Stock stock){
-        return true;
-    }
+    public abstract boolean evalSell(Stock stock);
 
 }

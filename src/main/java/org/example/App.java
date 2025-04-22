@@ -11,8 +11,8 @@ import org.example.actor.AuditActor;
 import org.example.actor.QuoteConsumerActor;
 import org.example.actor.QuoteGeneratorActor;
 import org.example.actor.TraderActor;
-import org.example.protocol.Quote;
-import org.example.protocol.Stock;
+import org.example.mdo.Quote;
+import org.example.mdo.Stock;
 import org.example.message.ProduceQuote;
 
 import java.util.*;
@@ -45,7 +45,7 @@ public class App {
 
         // multi-thread the traders to simulate interaction from multiple users
         PoolRouter<TraderActor.Command> traderPool = Routers.pool(numberOfTraders, TraderActor.behavior(auditActor, quoteGeneratorActor));
-        ActorSystem traders = ActorSystem.create(traderPool.withBroadcastPredicate(msg -> msg instanceof TraderActor.Command), "traders");
+        ActorSystem<TraderActor.Command> traders = ActorSystem.create(traderPool.withBroadcastPredicate(msg -> msg instanceof TraderActor.Command), "traders");
 
 
 

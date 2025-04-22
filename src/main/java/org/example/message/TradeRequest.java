@@ -1,8 +1,8 @@
 package org.example.message;
 
 import org.example.actor.TraderActor;
-import org.example.protocol.OrderType;
-import org.example.protocol.Stock;
+import org.example.mdo.OrderType;
+import org.example.mdo.Stock;
 
 public class TradeRequest implements TraderActor.Command {
 

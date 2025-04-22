@@ -1,4 +1,4 @@
-package org.example.protocol;
+package org.example.mdo;
 
 public class Stock {
     private static int counter =0;

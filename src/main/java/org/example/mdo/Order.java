@@ -1,4 +1,4 @@
-package org.example.protocol;
+package org.example.mdo;
 
 public class Order extends Quote {
     private OrderType orderType;

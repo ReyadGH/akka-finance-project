@@ -1,7 +1,7 @@
 package org.example.message;
 
 import org.example.actor.TraderActor;
-import org.example.protocol.Quote;
+import org.example.mdo.Quote;
 
 public class MarketUpdate implements TraderActor.Command{
 

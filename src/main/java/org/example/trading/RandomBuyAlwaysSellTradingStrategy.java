@@ -1,6 +1,7 @@
 package org.example.trading;
 
-import org.example.protocol.Stock;
+import org.example.mdo.Stock;
+
 import java.util.Random;
 
 public class RandomBuyAlwaysSellTradingStrategy extends TradingStrategy {
@@ -9,10 +10,11 @@ public class RandomBuyAlwaysSellTradingStrategy extends TradingStrategy {
 
         Random random = new Random();
 
-        if (random.nextBoolean()){
-            return true;
-        }
+        return random.nextBoolean();
+    }
 
-        return false;
+    @Override
+    public boolean evalSell(Stock stock) {
+        return true;
     }
 }

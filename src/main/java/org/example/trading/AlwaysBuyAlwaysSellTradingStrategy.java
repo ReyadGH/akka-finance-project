@@ -1,6 +1,6 @@
 package org.example.trading;
 
-import org.example.protocol.Stock;
+import org.example.mdo.Stock;
 
 public class AlwaysBuyAlwaysSellTradingStrategy extends TradingStrategy {
 
@@ -9,4 +9,11 @@ public class AlwaysBuyAlwaysSellTradingStrategy extends TradingStrategy {
         // no logic here always buy
         return true;
     }
+
+    @Override
+    public boolean evalSell(Stock stock) {
+        return true;
+    }
+
+
 }

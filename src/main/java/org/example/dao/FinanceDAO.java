@@ -1,6 +1,6 @@
 package org.example.dao;
 
-import org.example.protocol.Stock;
+import org.example.mdo.Stock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.sql.*;
