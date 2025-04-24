@@ -56,13 +56,10 @@ The detailed message flow between system components is illustrated below:
 * **Builder Pattern Implementation**: Apply the Builder pattern for complex object creation, especially for Stock and Quote objects.
 
 * **Dynamic Strategy Assignment**: Enable traders to switch strategies dynamically based on market conditions and performance metrics.
+* 
 * **Unit Testing with Akka TestKit**: Implement comprehensive unit tests using Akka's TestKit to verify actor behavior, message handling, and trading strategy logic in isolation.
-## Setup and Running Instructions
 
-### Prerequisites
-- Java 11+ (Eclipse Temurin 21.0.7+6-LTS)
-- Docker for Kafka and PostgreSQL
-- Maven
+## Running Instructions
 
 ### Running Docker Environment
 ```bash
@@ -74,16 +71,6 @@ The docker-compose file sets up:
 - Adminer (database UI) on port 8080
 - Kafka broker
 - Kafka-UI on port 8081
-
-## Database Schema
-
-![Database Schema](imgs/database_schema.png)
-
-The system uses PostgreSQL to store trader information, stock data, and transaction logs. The database consists of three main tables:
-
-- **Trader**: Stores trader IDs and account balances
-- **Stock**: Contains stock information including symbol, name, price, and ownership
-- **AuditLogs**: Records all transaction details for auditing and analysis
 
 ### Database Initialization
 Database tables are automatically created during startup using the SQL scripts in the `init-scripts` directory mounted to the PostgreSQL container:
