@@ -51,8 +51,6 @@ The detailed message flow between system components is illustrated below:
 
 * **Failure Detection**: Create a monitoring system that detects actor failures and Kafka connectivity issues with automated notifications.
 
-* **Backpressure Handling**: Add backpressure mechanisms to maintain system stability under high load conditions.
-
 * **Builder Pattern Implementation**: Apply the Builder pattern for complex object creation, especially for Stock and Quote objects.
 
 * **Dynamic Strategy Assignment**: Enable traders to switch strategies dynamically based on market conditions and performance metrics.
